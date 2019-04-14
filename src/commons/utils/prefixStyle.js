@@ -1,4 +1,4 @@
-let _domStyle = document.createElement(obj).style;
+let _domStyle = document.createElement('object').style;
 
 const _prefix = (function () {
     let _res = '';
@@ -13,7 +13,7 @@ const _prefix = (function () {
         const _val = _transform[key];
         if (_transform.hasOwnProperty(key) &&
             typeof _domStyle[_val] !== 'undefined') {
-            _re = key;
+            _res = key;
             break;
         }
     }

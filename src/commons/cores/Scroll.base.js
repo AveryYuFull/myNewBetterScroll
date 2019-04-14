@@ -2,7 +2,7 @@ import { DEFAULT_CONFIG, EVENT_TYPE, styleName } from '../constants';
 import DefaultOptions from '../utils/DefaultOptions';
 import getRect from '../utils/getRect';
 import getStyle from '../utils/getStyle';
-import { initEventListener } from '../utils/eventUtil';
+import eventUtil from '../utils/eventUtil';
 import isTouch from '../utils/isTouch';
 
 export default class ScrollBase extends DefaultOptions {
@@ -15,8 +15,15 @@ export default class ScrollBase extends DefaultOptions {
      * 滚动内容区
      */
     scroller = null;
+    /**
+     * 是否开启滚动
+     */
+    enabled = true;
+    x = 0;
+    y = 0;
 
     constructor (el, options) {
+        super(options);
         const _that = this;
         _that.setDefaultOptions(options);
         _that._init(el);
@@ -29,7 +36,9 @@ export default class ScrollBase extends DefaultOptions {
     _init (el) {
         const _that = this;
         _that._initElem(el);
+        _that._initDomEvent(true);
         _that._refresh();
+        _that.enable();
     }
 
     /**
@@ -37,6 +46,7 @@ export default class ScrollBase extends DefaultOptions {
      * @param {HTMLElement|String} el 包裹的元素
      */
     _initElem (el) {
+        const _that = this;
         if (typeof el === 'string') {
             el = document.querySelector(el);
         }
@@ -44,33 +54,60 @@ export default class ScrollBase extends DefaultOptions {
             console.warn('需要传入合法的滚动区域包裹元素');
             return;
         }
-        
+
         _that.wrapper = el;
         _that.scroller = el.children && el.children[0];
         if (!_that.scroller) {
             console.warn('没有滚动内容');
-            return;
         }
     }
 
     /**
      * 添加/取消事件
+     * @param {Boolean} flag 添加/取消事件
      */
     _initDomEvent (flag) {
         const _that = this;
         const _options = _that.defaultOptions;
         const _target = _options.bindToWrapper ? _that.wrapper : window;
-        initEventListener(window, ['orientationchange', 'resize'], _that, flag);
-
+        eventUtil.initEventListener(window, ['orientationchange', 'resize'], _that, flag);
         if (!_options.disableMouse) {
-            initEventListener(_that.wrapper, 'mousedown', _that, flag);
-            initEventListener(_target, ['mousemove', 'mousecancel', 'mouseup'], _that, flag);
+            eventUtil.initEventListener(_that.wrapper, 'mousedown', _that, flag);
+            eventUtil.initEventListener(_target, ['mousemove', 'mousecancel', 'mouseup'], _that, flag);
         }
-        if (!_options.disableTouch && isTouch()) {
-            initEventListener(_that.wrapper, 'touchstart', _that. flag);
-            initEventListener(_target, ['touchmove', 'touchcancel', 'touchend'], _that, flag);
+        if (!_options.disableTouch && isTouch) {
+            eventUtil.initEventListener(_that.wrapper, 'touchstart', _that, flag);
+            eventUtil.initEventListener(_target, ['touchmove', 'touchcancel', 'touchend'], _that, flag);
         }
-        initEventListener(_that.scroller, styleName.transitionEnd, _that, flag);
+        eventUtil.initEventListener(_that.scroller, styleName.transitionEnd, _that, flag);
+    }
+
+    /**
+     * 事件处理程序
+     * @param {Event} evt 事件对象
+     */
+    handleEvent (evt) {
+        const _that = this;
+        const _type = (evt && evt.type) || '';
+        switch (_type) {
+            case 'mousedown':
+            case 'touchstart':
+                _that._start(evt);
+                break;
+            case 'mousemove':
+            case 'touchmove':
+                _that._move(evt);
+                break;
+            case 'mouseup':
+            case 'mousecancel':
+            case 'touchend':
+            case 'touchcancel':
+                _that._end(evt);
+                break;
+            case styleName.transitionEnd:
+                _that._transitionEnd(evt);
+                break;
+        }
     }
 
     /**
@@ -126,5 +163,12 @@ export default class ScrollBase extends DefaultOptions {
         }
 
         _that.$emit(EVENT_TYPE.REFRESH);
+    }
+
+    /**
+     * 是否开启滚动
+     */
+    enable () {
+        this.enabled = true;
     }
 }

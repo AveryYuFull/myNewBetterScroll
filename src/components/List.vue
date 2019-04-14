@@ -13,7 +13,7 @@
 </template>
 
 <script>
-// import scrollFactory from '../commons/betterScroll';
+import scrollFactory from '../commons';
 
 export default {
     name: 'bs-list',
@@ -25,9 +25,9 @@ export default {
     mounted() {
         const _that = this;
         _that.genItemData();
-        // setTimeout(() => {
-        //     let bScroll = scrollFactory(_that.$el);
-        // });
+        setTimeout(() => {
+            let bScroll = scrollFactory(_that.$el);
+        });
     },
     methods: {
         genItemData (lower = 0, upper = 100) {

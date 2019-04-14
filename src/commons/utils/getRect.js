@@ -21,7 +21,7 @@ export default function getRect (el) {
             top: _rect.top,
             width: _rect.width,
             height: _rect.height
-        }
+        };
     } else {
         _res = {
             left: el.offsetLeft,

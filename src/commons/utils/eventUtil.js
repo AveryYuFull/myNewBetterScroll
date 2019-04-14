@@ -45,15 +45,18 @@ function _removeEvent (el, type, fn, capture) {
  * @param {HTMLElement} el 需要注册/移除的事件的dom元素
  * @param {Array} types 事件类型
  * @param {Function} fn 事件处理程序
- * @param {Boolean|Object} capture 事件捕获阶段
  * @param {Boolean} flag 注册/移除事件处理程序
+ * @param {Boolean|Object} capture 事件捕获阶段
  */
-function _initEventListener (el, types, fn, capture, flag) {
+function _initEventListener (el, types, fn, flag, capture) {
     if (!el || !types || types.length <= 0 ||
         !fn) {
         return;
     }
 
+    if (!(types instanceof Array)) {
+        types = [types];
+    }
     types.forEach((type) => {
         type && _initEvent(type);
     });
@@ -123,6 +126,41 @@ function _stopPropagation (evt) {
 }
 
 /**
+ * 获取事件对象的button属性
+ * @param {Event} evt 事件对象
+ * @returns {String} 返回button属性
+ */
+function _getButton (evt) {
+    let res;
+    evt = _getEvent(evt);
+    if (!evt) {
+        return;
+    }
+    const _button = evt.button + '';
+    if (document.implementation.hasFeature('MouseEvents', '2.0')) {
+        res = _button;
+    } else {
+        switch (_button) {
+            case '0':
+            case '1':
+            case '3':
+            case '5':
+            case '7':
+                res = '0';
+                break;
+            case '2':
+            case '6':
+                res = '2';
+                break;
+            case '4':
+                res = '1';
+                break;
+        }
+    }
+    return res;
+}
+
+/**
  * 事件对象
  */
 const eventUtil = (function () {
@@ -133,8 +171,9 @@ const eventUtil = (function () {
         getEvent: _getEvent,
         getTarget: _getTarget,
         preventDefault: _preventDefault,
-        stopPropagation: _stopPropagation
-    }
+        stopPropagation: _stopPropagation,
+        getButton: _getButton
+    };
 })();
 
 export default eventUtil;
