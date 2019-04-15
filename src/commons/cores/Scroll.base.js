@@ -4,7 +4,7 @@ import getRect from '../utils/getRect';
 import getStyle from '../utils/getStyle';
 import eventUtil from '../utils/eventUtil';
 import isTouch from '../utils/isTouch';
-
+import preventDefaultException from '../utils/preventDefaultException';
 export default class ScrollBase extends DefaultOptions {
     defaultOptions = DEFAULT_CONFIG;
     /**
@@ -170,5 +170,45 @@ export default class ScrollBase extends DefaultOptions {
      */
     enable () {
         this.enabled = true;
+    }
+
+    /**
+     * 过滤bounce
+     * @returns {Object} 返回过滤后的值
+     */
+    _filterBounce () {
+        const _that = this;
+        const _bounce = _that.options.bounce;
+        let _res = {
+            left: false,
+            right: false,
+            top: false,
+            bottom: false
+        };
+        if (_bounce) {
+            _res = {
+                left: typeof _bounce.left === 'undefined' ? true : _bounce.left,
+                right: typeof _bounce.right === 'undefined' ? true : _bounce.right,
+                top: typeof _bounce.top === 'undefined' ? true : _bounce.top,
+                bottom: typeof _bounce.bottom === 'undefined' ? true : _bounce.bottom
+            };
+        }
+        return _res;
+    }
+
+    /**
+     * 阻止事件默认行为/冒泡
+     * @param {Event} evt 事件对象
+     */
+    _preventEvent (evt) {
+        const _that = this;
+        const _options = _that.defaultOptions;
+        if (_options.preventDefault &&
+            !preventDefaultException(eventUtil.getTarget(evt), _options.preventDefaultException)) {
+            eventUtil.preventDefault(evt);
+        }
+        if (_options.stopPropagation) {
+            eventUtil.stopPropagation(evt);
+        }
     }
 }
