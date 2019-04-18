@@ -6,6 +6,8 @@ import ScrollBase from './Scroll.base';
 import eventUtil from '../utils/eventUtil';
 import getNow from '../utils/getNow';
 import { ease } from '../utils/ease';
+import momentum from '../utils/momentum';
+
 export default class ScrollCore extends ScrollBase {
     defaultOptions = DEFAULT_CONFIG;
 
@@ -21,7 +23,6 @@ export default class ScrollCore extends ScrollBase {
      */
     _start (evt) {
         const _that = this;
-        const _options = _that.defaultOptions;
         const _type = evtType[evt && evt.type];
         const _button = eventUtil.getButton(evt);
         if (_type !== TOUCH_EVENT &&
@@ -150,11 +151,23 @@ export default class ScrollCore extends ScrollBase {
         _that.directionY = _deltaY < 0 ? MOVING_DIRECTION.TOP : (_deltaY > 0 ? MOVING_DIRECTION.BOTTOM : 0);
         let _absDistX = Math.abs(_newX - _that.startX);
         let _absDistY = Math.abs(_newY - _that.startY);
-        let _duration = _endTime - _that.startTime;
-        if (_duration < _options.momentumLimitTime &&
+        let _time = _endTime - _that.startTime;
+        if (_time < _options.momentumLimitTime &&
             (_absDistX > _options.momentumLimitDistance || _absDistY > _options.momentumLimitDistance)) { // 开启动量
+            const _dirX = _that.directionX;
+            const _dirY = _that.directionY;
             const { left, right, top, bottom } = _that._filterBounce();
+            let _wrapWidth = ((_dirX === MOVING_DIRECTION.LEFT && right) || (_dirX === MOVING_DIRECTION.RIGHT && left))
+                ? _that.wrapperWidth : 0;
+            let _wrapHeight = ((_dirY === MOVING_DIRECTION.TOP && bottom) || (_dirY === MOVING_DIRECTION.BOTTOM && top))
+                ? _that.wrapperHeight : 0;
+            let _desX = momentum(_newX, _that.startX, _time, _that.maxScrollX, _that.minScrollX, _wrapWidth, _options);
+            let _desY = momentum(_newY, _that.startY, _time, _that.maxScrollY, _that.minScrollY, _wrapHeight, _options);
+            _newX = (_desX && _desX.destination) || _newX;
+            _newY = (_desY && _desY.destination) || _newY;
+            _time = Math.max(_desX && _desX.duration, _desY && _desY.duration, _time);
         }
+        _that._scrollTo(_newX, _newY, _time);
     }
 
     /**
@@ -249,6 +262,18 @@ export default class ScrollCore extends ScrollBase {
      * @param {*} easing 动画规则方法
      */
     _scrollTo (x, y, time, easing) {
+        const _that = this;
+        if (x === _that.x && y === _that.y) {
+            return;
+        }
+
+        const _opts = _that.defaultOptions;
+        if (!time || _opts.useTransition) {
+
+        }
+    },
+    _setNewPos (x, y) {
+
     }
 
     /**

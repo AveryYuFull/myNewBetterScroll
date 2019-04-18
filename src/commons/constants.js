@@ -35,7 +35,8 @@ export const DEFAULT_CONFIG = {
     bounceTime: 800, // 回弹动画时长
     deceleration: 0.0015, // momentum动画的减速度
     swipeTime: 2500, // momentum动画的时长
-    swipeBounceTime: 500 // momentum动画的回弹时长
+    swipeBounceTime: 500, // momentum动画的回弹时长
+    useTransition: true // 是否使用css3的transition做动画
 };
 
 /**

@@ -36,6 +36,7 @@ export default class ScrollBase extends DefaultOptions {
     _init (el) {
         const _that = this;
         _that._initElem(el);
+        _that._watchTransition();
         _that._initDomEvent(true);
         _that._refresh();
         _that.enable();
@@ -209,6 +210,33 @@ export default class ScrollBase extends DefaultOptions {
         }
         if (_options.stopPropagation) {
             eventUtil.stopPropagation(evt);
+        }
+    }
+
+    /**
+     * 注册监听动画的变量
+     */
+    _watchTransition () {
+        const _that = this;
+        if (Object.defineProperty instanceof Function) {
+            const _opts = _that.defaultOptions;
+            const _scroller = _that.scroller;
+            let _isInTransition = false;
+            let _key = _opts.useTransition ? 'isInTransition' : 'isAnimating';
+            Object.defineProperty(_that, _key, {
+                get () {
+                    return _isInTransition;
+                },
+                set (nowVal) {
+                    _isInTransition = nowVal;
+                    let _domList = _scroller.children.length > 0 ? _scroller.children : [_scroller];
+                    let _pointerEvents = _isInTransition ? 'none' : 'auto';
+                    for (let i = 0; i < _domList.length; i++) {
+                        const _el = _domList[i];
+                        _el.style.pointerEvents = _pointerEvents;
+                    }
+                }
+            });
         }
     }
 }
