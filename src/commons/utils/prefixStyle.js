@@ -3,7 +3,7 @@ let _domStyle = document.createElement('object').style;
 const _prefix = (function () {
     let _res = '';
     let _transform = {
-        'Webkit': 'WebkitTransform',
+        'webkit': 'WebkitTransform',
         'Moz': 'MozTransform',
         'O': 'OTransform',
         'ms': 'msTransform',

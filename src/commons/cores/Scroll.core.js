@@ -10,7 +10,8 @@ import getNow from '../utils/getNow';
 import { ease } from '../utils/ease';
 import momentum from '../utils/momentum';
 import setStyle from '../utils/setStyle';
-import { raf, caf } from '../utils/raf';
+import { requestAnimationFrame, cancelAnimationFrame } from '../utils/raf';
+import getStyle from '../utils/getStyle';
 
 export default class ScrollCore extends ScrollBase {
     defaultOptions = DEFAULT_CONFIG;
@@ -86,7 +87,7 @@ export default class ScrollCore extends ScrollBase {
         const _absDistX = Math.abs(_that.distX);
         const _absDistY = Math.abs(_that.distY);
         const _timestamp = getNow();
-        if ((_timestamp - _that.endTime) > _options.momentumLimitTime ||
+        if ((_timestamp - _that.endTime) > _options.momentumLimitTime &&
             (_absDistX < _options.momentumLimitDistance && _absDistY < _options.momentumLimitDistance)) {
             return;
         }
@@ -117,7 +118,7 @@ export default class ScrollCore extends ScrollBase {
                 });
             }
         }
-        if (_probeType === PROBE_TYPE.REAL_TIME) {
+        if (_probeType > PROBE_TYPE.DEBOUNCE) {
             _that.$emit(EVENT_TYPE.SCROLL, {
                 x: _that.x,
                 y: _that.y
@@ -142,7 +143,7 @@ export default class ScrollCore extends ScrollBase {
         const _options = _that.defaultOptions;
         const _bounceTime = _options.bounceTime;
 
-        if (_that._resetPos(_that.x, _that.y, _bounceTime, ease.bounce)) {
+        if (_that._resetPos(_bounceTime, ease.bounce)) {
             return;
         }
 
@@ -184,7 +185,7 @@ export default class ScrollCore extends ScrollBase {
                 _easing = ease.swipeBounce;
             }
             _that._scrollTo(_newX, _newY, _time, _easing);
-            console.log(_newX, _newY, _time)
+            return;
         }
 
         _that.$emit(EVENT_TYPE.SCROLL_END, {
@@ -282,6 +283,36 @@ export default class ScrollCore extends ScrollBase {
     }
 
     /**
+     * 动画结束回调方法
+     * @param {Event} evt 事件对象
+     */
+    _transitionEnd (evt) {
+        const _that = this;
+        if (evt.target !== _that.scroller ||
+            (!_that.isIntransition && !_that.isAnimating)) {
+            return;
+        }
+
+        const _opts = _that.defaultOptions;
+        _that._setTransition(0, null);
+        if (_opts.useTransition) {
+            cancelAnimationFrame(_that.probeTimer);
+            _that.probeTimer = null;
+            _that.isIntransition = false;
+        } else {
+            cancelAnimationFrame(_that.animateTimer);
+            _that.animateTimer = null;
+            _that.isAnimating = false;
+        }
+        if (!_that._resetPos(_opts.bounceTime, ease.bounce)) {
+            _that.$emit(EVENT_TYPE.SCROLL_END, {
+                x: _that.x,
+                y: _that.y
+            });
+        }
+    }
+
+    /**
      * 设置滚动条位置
      * @param {Number} x 水平位置
      * @param {Number} y 垂直位置
@@ -296,33 +327,116 @@ export default class ScrollCore extends ScrollBase {
 
         const _opts = _that.defaultOptions;
         if (!time || _opts.useTransition) {
+            _that.isIntransition = time && _opts.useTransition;
             _that._setTransition(time, easing && easing.style);
             _that._translate(x, y);
+            if (time && _opts.probeType === PROBE_TYPE.MOMENTUM) {
+                _that._startProbe();
+            }
+        } else {
+            _that.isAnimating = true;
+            _that._animate(x, y, time, easing.fn);
         }
+    }
+
+    /**
+     * 使用js动画
+     * @param {Number} x 新的水平位置
+     * @param {Number} y 新的垂直位置
+     * @param {Number} time 动画时长
+     * @param {Function} easing 动画规则方法
+     */
+    _animate (x, y, time, easing) {
+        const _that = this;
+        const _opts = _that.defaultOptions;
+        let _startX = _that.x;
+        let _startY = _that.y;
+        let _startTime = getNow();
+        let _destTime = _startTime + time;
+
+        function _step () {
+            let _curTime = getNow();
+            if (_curTime >= _destTime) {
+                _that._translate(x, y);
+                if (_opts.probeType === PROBE_TYPE.MOMENTUM) {
+                    _that.$emit(EVENT_TYPE.SCROLL, {
+                        x: _that.x,
+                        y: _that.y
+                    });
+                }
+                _that.$dispatchEvent(_that.scroller, styleName.transitionEnd);
+                return;
+            }
+            _curTime = (_curTime - _startTime) / time;
+            let _newX = _startX + easing(_curTime) * (x - _startX);
+            let _newY = _startY + easing(_curTime) * (y - _startY);
+            _that._translate(_newX, _newY);
+            if (_opts.probeType === PROBE_TYPE.MOMENTUM) {
+                _that.$emit(EVENT_TYPE.SCROLL, {
+                    x: _that.x,
+                    y: _that.y
+                });
+            }
+
+            _that.animateTimer = requestAnimationFrame(_step);
+        }
+
+        cancelAnimationFrame(_that.animateTimer);
+        _that.animateTimer = requestAnimationFrame(_step);
     }
 
     /**
      * 实时记录动画的滚动信息
      */
-    // _startProbe () {
-    //     const _that = this;
-    //     caf(_that.probeTimer);
-    //     _that.probeTimer = raf(_step);
+    _startProbe () {
+        const _that = this;
+        cancelAnimationFrame(_that.probeTimer);
+        _that.probeTimer = requestAnimationFrame(_step);
 
-    //     /**
-    //      * 每一步执行的方法
-    //      */
-    //     function _step () {
-
-    //     }
-    // }
+        /**
+         * 每一步执行的方法
+         */
+        function _step () {
+            let _pos = _that._getComputedPos();
+            _that.$emit(EVENT_TYPE.SCROLL, {
+                x: _pos.x,
+                y: _pos.y
+            });
+            if (_that.isIntransition) {
+                _that.probeTimer = requestAnimationFrame(_step);
+            }
+        }
+    }
 
     /**
      * 获取滚动条的位置信息
+     * @returns {Object|Undefined} 返回滚动条的位置信息
      */
-    // _getComputedPos () {
+    _getComputedPos () {
+        const _that = this;
+        const _opts = _that.defaultOptions;
+        let _style = getStyle(_that.scroller);
+        if (!_style) {
+            return {};
+        }
 
-    // }
+        let _x;
+        let _y;
+        if (_opts.useTransform) {
+            let _matrix = _style[styleName.transform] || '';
+            _matrix = (_matrix.split(')')[0]) || '';
+            _matrix = _matrix.split(', ');
+            _x = _matrix[12] || _matrix[4];
+            _y = _matrix[13] || _matrix[5];
+        } else {
+            _x = (_style['left'] || '').replace(/[^-.\d]/g, '');
+            _y = (_style['top'] || '').replace(/[^-.\d]/g, '');
+        }
+        return {
+            x: +_x,
+            y: +_y
+        };
+    }
 
     /**
      * 设置新的位置
@@ -335,7 +449,7 @@ export default class ScrollCore extends ScrollBase {
         if (x === _that.x && y === _that.y) {
             return;
         }
-        if (_opts.useTransition) {
+        if (_opts.useTransform) {
             setStyle(_that.scroller, styleName.transform, `translate3d(${x}px, ${y}px, 0)`);
         } else {
             setStyle(_that.scroller, 'left', `${x}px`);
@@ -347,15 +461,15 @@ export default class ScrollCore extends ScrollBase {
 
     /**
      * 重置滚动条位置
-     * @param {Number} x 水平位置
-     * @param {Number} y 垂直位置
      * @param {Number} time 动画时间
      * @param {*} easing 动画规则方法
      * @returns {Boolean} 是否重置滚动条位置成功
      */
-    _resetPos (x, y, time, easing) {
+    _resetPos (time, easing) {
         const _that = this;
         let _res = false;
+        let x = _that.x;
+        let y = _that.y;
         if (!_that.hasScrollX || x > _that.minScrollX) {
             x = _that.minScrollX;
         } else if (x < _that.maxScrollX) {

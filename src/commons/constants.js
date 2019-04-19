@@ -31,13 +31,14 @@ export const DEFAULT_CONFIG = {
     momentumLimitDistance: 15, // 只有当快速滑动的距离大于momentumLimitDistance, 才开启momentum动画
     directionLockThreshold: 5, // 固定方向的阀值
     eventPassthrough: '', // 可选值（horizontal／vertical），如果希望在某个方向上使用原生滚动，就设置这个值
-    probeType: PROBE_TYPE.NORMAL, // 派发滚动条事件机制
+    probeType: PROBE_TYPE.MOMENTUM, // 派发滚动条事件机制
     bounce: true, // 是否开启回弹
     bounceTime: 800, // 回弹动画时长
     deceleration: 0.0015, // momentum动画的减速度
     swipeTime: 2500, // momentum动画的时长
     swipeBounceTime: 500, // momentum动画的回弹时长
-    useTransition: true // 是否使用css3的transition做动画
+    useTransition: true, // 是否使用css3的transition做动画
+    useTransform: true // 是否使用transform来设置位置
 };
 
 /**

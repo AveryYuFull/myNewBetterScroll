@@ -248,7 +248,7 @@ export default class ScrollBase extends DefaultOptions {
      */
     _setTransition (time, easing) {
         const _scroller = this.scroller;
-        setStyle(_scroller, styleName.transitionDuration, time || 0);
+        setStyle(_scroller, styleName.transitionDuration, `${time || 0}ms`);
         setStyle(_scroller, styleName.transitionTimingFunction, easing);
     }
 }

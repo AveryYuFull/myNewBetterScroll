@@ -27,9 +27,5 @@ import getNow from './getNow';
     }
 })();
 
-const raf = {
-    raf: window.requestAnimationFrame,
-    caf: window.cancelAnimationFrame
-};
-
-export default raf;
+export const requestAnimationFrame = window.requestAnimationFrame;
+export const cancelAnimationFrame = window.cancelAnimationFrame;

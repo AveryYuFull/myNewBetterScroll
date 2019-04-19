@@ -27,6 +27,21 @@ export default {
         _that.genItemData();
         setTimeout(() => {
             let bScroll = scrollFactory(_that.$el);
+            bScroll.$on('beforeScrollStart', (evt) => {
+                console.log('beforeScrollStart-->', evt);
+            });
+            bScroll.$on('scrollStart', (evt) => {
+                console.log('scrollStart-->', evt);
+            });
+            bScroll.$on('scroll', (evt) => {
+                console.log('scroll-->', evt);
+            });
+            bScroll.$on('touchEnd', (evt) => {
+                console.log('touchEnd-->', evt);
+            });
+            bScroll.$on('scrollEnd', (evt) => {
+                console.log('scrollEnd-->', evt);
+            });
         });
     },
     methods: {
