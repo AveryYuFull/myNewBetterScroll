@@ -26,6 +26,7 @@ export const DEFAULT_CONFIG = {
         tagName: /^(INPUT|TEXTAREA|BUTTON)$/
     },
     stopPropagation: true, // 是否阻止事件冒泡
+    momentum: true, // 是否开启动量
     momentumLimitTime: 300, // 只有当快速滑动的时间小于momentumLimitTime,才开启momentum动画
     momentumLimitDistance: 15, // 只有当快速滑动的距离大于momentumLimitDistance, 才开启momentum动画
     directionLockThreshold: 5, // 固定方向的阀值
@@ -47,14 +48,18 @@ export const EVENT_TYPE = {
     BEFORE_SCROLL_START: 'beforeScrollStart', // 在滚动条滑动之前
     SCROLL_START: 'scrollStart', // 滚动条开始滑动
     SCROLL: 'scroll', // 滚动事件
-    TOUCH_END: 'touchEnd' // 鼠标/手指离开
+    TOUCH_END: 'touchEnd', // 鼠标/手指离开
+    SCROLL_END: 'scrollEnd' // 滑动结束
 };
 
 /**
  * 样式
  */
 export const styleName = {
-    transitionEnd: prefixStyle('transitionEnd')
+    transitionEnd: prefixStyle('transitionEnd'),
+    transitionDuration: prefixStyle('transitionDuration'),
+    transitionTimingFunction: prefixStyle('transitionTimingFunction'),
+    transform: prefixStyle('transform')
 };
 
 /**

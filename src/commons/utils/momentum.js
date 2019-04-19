@@ -14,7 +14,7 @@
  */
 export default function momentum (curPos, startPos, time, lowMargin, upMargin, wrapSize, options) {
     if (!time) {
-        return;
+        return {};
     }
 
     options = options || {};

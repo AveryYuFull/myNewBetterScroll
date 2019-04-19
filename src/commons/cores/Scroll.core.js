@@ -1,12 +1,16 @@
+/* eslint-disable */
 import { DEFAULT_CONFIG, evtType,
     TOUCH_EVENT, EVENT_TYPE,
     LOCK_DIRECTION, PROBE_TYPE,
-    MOVING_DIRECTION} from '../constants';
+    MOVING_DIRECTION,
+    styleName} from '../constants';
 import ScrollBase from './Scroll.base';
 import eventUtil from '../utils/eventUtil';
 import getNow from '../utils/getNow';
 import { ease } from '../utils/ease';
 import momentum from '../utils/momentum';
+import setStyle from '../utils/setStyle';
+import { raf, caf } from '../utils/raf';
 
 export default class ScrollCore extends ScrollBase {
     defaultOptions = DEFAULT_CONFIG;
@@ -82,16 +86,16 @@ export default class ScrollCore extends ScrollBase {
         const _absDistX = Math.abs(_that.distX);
         const _absDistY = Math.abs(_that.distY);
         const _timestamp = getNow();
-        if ((_timestamp - _that.startTime) < _options.momentumLimitTime ||
+        if ((_timestamp - _that.endTime) > _options.momentumLimitTime ||
             (_absDistX < _options.momentumLimitDistance && _absDistY < _options.momentumLimitDistance)) {
             return;
         }
 
-        _that.directionLocked = _that._handleDir();
+        _that.directionLocked = _that._handleDir(_absDistX, _absDistY);
         const _delta = _that._handleDelta(_deltaX, _deltaY);
         _deltaX = _delta.x;
         _deltaY = _delta.y;
-        const _newPos = _that._handleNewPos(_deltaX, _deltaY);
+        const _newPos = _that._handleNewPos(_deltaX, _deltaY, _that.directionLocked);
         _that._scrollTo(_newPos.x, _newPos.y);
 
         if (!_that.moved) {
@@ -142,46 +146,67 @@ export default class ScrollCore extends ScrollBase {
             return;
         }
 
-        let _endTime = getNow();
-        const _newX = _that.x;
-        const _newY = _that.y;
+        let _newX = _that.x;
+        let _newY = _that.y;
+
         const _deltaX = _newX - _that.absStartX;
         const _deltaY = _newY - _that.absStartY;
         _that.directionX = _deltaX < 0 ? MOVING_DIRECTION.LEFT : (_deltaX > 0 ? MOVING_DIRECTION.RIGHT : 0);
         _that.directionY = _deltaY < 0 ? MOVING_DIRECTION.TOP : (_deltaY > 0 ? MOVING_DIRECTION.BOTTOM : 0);
+
+        _that.endTime = getNow();
         let _absDistX = Math.abs(_newX - _that.startX);
         let _absDistY = Math.abs(_newY - _that.startY);
-        let _time = _endTime - _that.startTime;
-        if (_time < _options.momentumLimitTime &&
+        let _duration = _that.endTime - _that.startTime;
+
+        // 开启动量
+        let _time = 0;
+        if (_options.momentum && _duration < _options.momentumLimitTime &&
             (_absDistX > _options.momentumLimitDistance || _absDistY > _options.momentumLimitDistance)) { // 开启动量
-            const _dirX = _that.directionX;
-            const _dirY = _that.directionY;
             const { left, right, top, bottom } = _that._filterBounce();
-            let _wrapWidth = ((_dirX === MOVING_DIRECTION.LEFT && right) || (_dirX === MOVING_DIRECTION.RIGHT && left))
+            let _wrapWidth = ((_that.directionX === MOVING_DIRECTION.LEFT && right) || (_that.directionX === MOVING_DIRECTION.RIGHT && left))
                 ? _that.wrapperWidth : 0;
-            let _wrapHeight = ((_dirY === MOVING_DIRECTION.TOP && bottom) || (_dirY === MOVING_DIRECTION.BOTTOM && top))
+            let _wrapHeight = ((_that.directionY === MOVING_DIRECTION.TOP && bottom) || (_that.directionY === MOVING_DIRECTION.BOTTOM && top))
                 ? _that.wrapperHeight : 0;
-            let _desX = momentum(_newX, _that.startX, _time, _that.maxScrollX, _that.minScrollX, _wrapWidth, _options);
-            let _desY = momentum(_newY, _that.startY, _time, _that.maxScrollY, _that.minScrollY, _wrapHeight, _options);
-            _newX = (_desX && _desX.destination) || _newX;
-            _newY = (_desY && _desY.destination) || _newY;
-            _time = Math.max(_desX && _desX.duration, _desY && _desY.duration, _time);
+            const _momentX = _that.hasScrollX ? momentum(_newX, _that.startX, _duration, _that.maxScrollX, _that.minScrollX, _wrapWidth, _options)
+                : {destination: _newX, duration: 0};
+            const _momentY = _that.hasScrollY ? momentum(_newY, _that.startY, _duration, _that.maxScrollY, _that.minScrollY, _wrapHeight, _options)
+                : {destination: _newY, duration: 0};
+            _newX = _momentX.destination || _newX;
+            _newY = _momentY.destination || _newY;
+            _time = Math.max(_momentX.duration, _momentY.duration);
         }
-        _that._scrollTo(_newX, _newY, _time);
+
+        let _easing = ease.swipe;
+        if (_newX !== _that.x || _newY !== _that.y) {
+            if (_newX < _that.minScrollX || _newX > _that.maxScrollX ||
+                _newY < _that.minScrollY || _newY > _that.maxScrollY) {
+                _easing = ease.swipeBounce;
+            }
+            _that._scrollTo(_newX, _newY, _time, _easing);
+            console.log(_newX, _newY, _time)
+        }
+
+        _that.$emit(EVENT_TYPE.SCROLL_END, {
+            x: _that.x,
+            y: _that.y
+        });
     }
 
     /**
      * 固定滚动方向
+     * @param {Number} absDistX 水平方向滑动的总距离
+     * @param {Number} absDistY 垂直方向滑动的总距离
      * @returns {String} 返回固定的滚动方向
      */
-    _handleDir () {
+    _handleDir (absDistX, absDistY) {
         const _that = this;
         const _options = _that.defaultOptions;
         let _dirLocked = _that.directionLocked;
         if (!_dirLocked && !_options.freeScroll) {
-            if (_absDistY - _absDistX >= _options.directionLockThreshold) {
+            if (absDistY - absDistX >= _options.directionLockThreshold) {
                 _dirLocked = LOCK_DIRECTION.VERTICAL;
-            } else if (_absDistX - _absDistY > _options.directionLockThreshold) {
+            } else if (absDistX - absDistY > _options.directionLockThreshold) {
                 _dirLocked = LOCK_DIRECTION.HORIZONTAL;
             } else {
                 _dirLocked = LOCK_DIRECTION.NO;
@@ -194,19 +219,20 @@ export default class ScrollCore extends ScrollBase {
      * 处理delta
      * @param {Number} deltaX 水平方向的delta
      * @param {Number} deltaY 垂直方向的delta
+     * @param {LOCK_DIRECTION} dirLocked 滑动锁定的方向
      * @returns {Object} 返回处理后的delta
      */
-    _handleDelta (deltaX, deltaY) {
+    _handleDelta (deltaX, deltaY, dirLocked) {
         const _that = this;
         const _options = _that.defaultOptions;
         const _evtPassthrough = _options.eventPassthrough;
-        if (_dirLocked === LOCK_DIRECTION.HORIZONTAL) {
+        if (dirLocked === LOCK_DIRECTION.HORIZONTAL) {
             if (_evtPassthrough === LOCK_DIRECTION.HORIZONTAL) {
                 _that.initiated = false;
                 return;
             }
             deltaY = 0;
-        } else if (_dirLocked === LOCK_DIRECTION.VERTICAL) {
+        } else if (dirLocked === LOCK_DIRECTION.VERTICAL) {
             if (_evtPassthrough === LOCK_DIRECTION.VERTICAL) {
                 _that.initiated = false;
                 return;
@@ -229,6 +255,7 @@ export default class ScrollCore extends ScrollBase {
      * @returns {Object} 返回处理后的新的水平／垂直方向的滚动位置
      */
     _handleNewPos (deltaX, deltaY) {
+        const _that = this;
         let _newX = _that.x + deltaX;
         let _newY = _that.y + deltaY;
         const { left, right, top, bottom } = _that._filterBounce();
@@ -269,11 +296,53 @@ export default class ScrollCore extends ScrollBase {
 
         const _opts = _that.defaultOptions;
         if (!time || _opts.useTransition) {
-
+            _that._setTransition(time, easing && easing.style);
+            _that._translate(x, y);
         }
-    },
-    _setNewPos (x, y) {
+    }
 
+    /**
+     * 实时记录动画的滚动信息
+     */
+    // _startProbe () {
+    //     const _that = this;
+    //     caf(_that.probeTimer);
+    //     _that.probeTimer = raf(_step);
+
+    //     /**
+    //      * 每一步执行的方法
+    //      */
+    //     function _step () {
+
+    //     }
+    // }
+
+    /**
+     * 获取滚动条的位置信息
+     */
+    // _getComputedPos () {
+
+    // }
+
+    /**
+     * 设置新的位置
+     * @param {Number} x 水平位置
+     * @param {Number} y 垂直位置
+     */
+    _translate(x, y) {
+        const _that = this;
+        const _opts = _that.defaultOptions;
+        if (x === _that.x && y === _that.y) {
+            return;
+        }
+        if (_opts.useTransition) {
+            setStyle(_that.scroller, styleName.transform, `translate3d(${x}px, ${y}px, 0)`);
+        } else {
+            setStyle(_that.scroller, 'left', `${x}px`);
+            setStyle(_that.scroller, 'top', `${y}px`);
+        }
+        _that.x = x;
+        _that.y = y;
     }
 
     /**

@@ -5,6 +5,7 @@ import getStyle from '../utils/getStyle';
 import eventUtil from '../utils/eventUtil';
 import isTouch from '../utils/isTouch';
 import preventDefaultException from '../utils/preventDefaultException';
+import setStyle from '../utils/setStyle';
 export default class ScrollBase extends DefaultOptions {
     defaultOptions = DEFAULT_CONFIG;
     /**
@@ -77,8 +78,8 @@ export default class ScrollBase extends DefaultOptions {
             eventUtil.initEventListener(_target, ['mousemove', 'mousecancel', 'mouseup'], _that, flag);
         }
         if (!_options.disableTouch && isTouch) {
-            eventUtil.initEventListener(_that.wrapper, 'touchstart', _that, flag);
-            eventUtil.initEventListener(_target, ['touchmove', 'touchcancel', 'touchend'], _that, flag);
+            eventUtil.initEventListener(_that.wrapper, 'touchstart', _that, flag, {passive: false});
+            eventUtil.initEventListener(_target, ['touchmove', 'touchcancel', 'touchend'], _that, flag, {passive: false});
         }
         eventUtil.initEventListener(_that.scroller, styleName.transitionEnd, _that, flag);
     }
@@ -179,7 +180,7 @@ export default class ScrollBase extends DefaultOptions {
      */
     _filterBounce () {
         const _that = this;
-        const _bounce = _that.options.bounce;
+        const _bounce = _that.defaultOptions.bounce;
         let _res = {
             left: false,
             right: false,
@@ -238,5 +239,16 @@ export default class ScrollBase extends DefaultOptions {
                 }
             });
         }
+    }
+
+    /**
+     * 设置动画参数
+     * @param {Number} time 动画时长
+     * @param {String|Function} easing 动画规则
+     */
+    _setTransition (time, easing) {
+        const _scroller = this.scroller;
+        setStyle(_scroller, styleName.transitionDuration, time || 0);
+        setStyle(_scroller, styleName.transitionTimingFunction, easing);
     }
 }
