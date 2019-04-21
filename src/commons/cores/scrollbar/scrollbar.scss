@@ -1,0 +1,32 @@
+
+.bscroll-horizontal-scrollbar {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: 0;
+    height: 7px;
+    overflow: hidden;
+    .bscroll-indicator {
+        height: 100%;
+    }
+}
+
+.bscroll-vertical-scrollbar {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    right: 1px;
+    width: 7px;
+    overflow: hidden;
+    .bscroll-indicator {
+        width: 100%;
+    }
+}
+
+.bscroll-indicator {
+    position: absolute;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
+}

@@ -40,7 +40,11 @@ export const DEFAULT_CONFIG = {
     useTransition: true, // 是否使用css3的transition做动画
     useTransform: true, // 是否使用transform来设置位置
     observeDOM: true, // 是否监听dom的变化
-    autoBlur: true // 是否应该blur
+    autoBlur: true, // 是否应该blur
+    scrollbar: { // 配置滚动条
+        fade: true,
+        interactive: true
+    }
 };
 
 /**
@@ -108,3 +112,11 @@ export const MOVING_DIRECTION = {
     TOP: 'top', // 水平向上滑动
     BOTTOM: 'bottom' // 水平向下滑动
 };
+
+/**
+ * 滚动条方向
+ */
+export const SCROLLBAR_DIRECTION = {
+    HORIZONTAL: 'horizontal', // 水平滚动条
+    VERTICAL: 'vertical' // 垂直滚动条
+}
