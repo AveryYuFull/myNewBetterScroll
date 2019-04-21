@@ -30,7 +30,7 @@ export default class ScrollCore extends ScrollBase {
         const _that = this;
         const _type = evtType[evt && evt.type];
         const _button = eventUtil.getButton(evt);
-        if (_type !== TOUCH_EVENT &&
+        if (_that.destroyed || _type !== TOUCH_EVENT &&
             _button !== '0') {
             return;
         }
@@ -40,6 +40,8 @@ export default class ScrollCore extends ScrollBase {
         }
         _that.initiated = _type;
         _that._preventEvent(evt);
+
+        _that._stop();
 
         const _point = evt.touches ? evt.touches[0] : evt;
         _that.pointX = _point.pageX;
@@ -71,7 +73,7 @@ export default class ScrollCore extends ScrollBase {
     _move (evt) {
         const _that = this;
         const _type = evtType[evt.type];
-        if (!_that.enabled || _that.initiated !== _type) {
+        if (_that.destroyed || !_that.enabled || _that.initiated !== _type) {
             return;
         }
         _that._preventEvent(evt);
@@ -132,7 +134,7 @@ export default class ScrollCore extends ScrollBase {
     _end (evt) {
         const _that = this;
         const _evtType = evtType[evt.type];
-        if (!_that.enabled || _that.initiated !== _evtType) {
+        if (_that.destroyed || !_that.enabled || _that.initiated !== _evtType) {
             return;
         }
         _that.initiated = false;
@@ -283,13 +285,28 @@ export default class ScrollCore extends ScrollBase {
     }
 
     /**
+     * 停止动画
+     */
+    _stop () {
+        const _that = this;
+        if (!_that.isInTransition && !_that.isAnimating) {
+            return;
+        }
+        if (_that.defaultOptions.useTransition) {
+            const _pos = _that._getComputedPos();
+            _that._scrollTo(_pos.x, _pos.y);
+        }
+        _that.$dispatchEvent(_that.scroller, styleName.transitionEnd);
+    }
+
+    /**
      * 动画结束回调方法
      * @param {Event} evt 事件对象
      */
     _transitionEnd (evt) {
         const _that = this;
         if (evt.target !== _that.scroller ||
-            (!_that.isIntransition && !_that.isAnimating)) {
+            (!_that.isInTransition && !_that.isAnimating)) {
             return;
         }
 
@@ -298,7 +315,7 @@ export default class ScrollCore extends ScrollBase {
         if (_opts.useTransition) {
             cancelAnimationFrame(_that.probeTimer);
             _that.probeTimer = null;
-            _that.isIntransition = false;
+            _that.isInTransition = false;
         } else {
             cancelAnimationFrame(_that.animateTimer);
             _that.animateTimer = null;
@@ -326,8 +343,10 @@ export default class ScrollCore extends ScrollBase {
         }
 
         const _opts = _that.defaultOptions;
-        if (!time || _opts.useTransition) {
-            _that.isIntransition = time && _opts.useTransition;
+        if (!time) {
+            _that._translate(x, y);
+        } else if (_opts.useTransition) {
+            _that.isInTransition = true;
             _that._setTransition(time, easing && easing.style);
             _that._translate(x, y);
             if (time && _opts.probeType === PROBE_TYPE.MOMENTUM) {
@@ -402,7 +421,7 @@ export default class ScrollCore extends ScrollBase {
                 x: _pos.x,
                 y: _pos.y
             });
-            if (_that.isIntransition) {
+            if (_that.isInTransition) {
                 _that.probeTimer = requestAnimationFrame(_step);
             }
         }

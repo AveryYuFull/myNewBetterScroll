@@ -38,7 +38,9 @@ export const DEFAULT_CONFIG = {
     swipeTime: 2500, // momentum动画的时长
     swipeBounceTime: 500, // momentum动画的回弹时长
     useTransition: true, // 是否使用css3的transition做动画
-    useTransform: true // 是否使用transform来设置位置
+    useTransform: true, // 是否使用transform来设置位置
+    observeDOM: true, // 是否监听dom的变化
+    autoBlur: true // 是否应该blur
 };
 
 /**
@@ -50,7 +52,8 @@ export const EVENT_TYPE = {
     SCROLL_START: 'scrollStart', // 滚动条开始滑动
     SCROLL: 'scroll', // 滚动事件
     TOUCH_END: 'touchEnd', // 鼠标/手指离开
-    SCROLL_END: 'scrollEnd' // 滑动结束
+    SCROLL_END: 'scrollEnd', // 滑动结束
+    DESTROY: 'destroy' // destroy事件
 };
 
 /**

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { DEFAULT_CONFIG, EVENT_TYPE, styleName } from '../constants';
 import DefaultOptions from '../utils/DefaultOptions';
 import getRect from '../utils/getRect';
@@ -20,6 +21,7 @@ export default class ScrollBase extends DefaultOptions {
      * 是否开启滚动
      */
     enabled = true;
+    destroyed = false;
     x = 0;
     y = 0;
 
@@ -36,9 +38,17 @@ export default class ScrollBase extends DefaultOptions {
      */
     _init (el) {
         const _that = this;
+        const _opts = _that.defaultOptions;
+
         _that._initElem(el);
         _that._watchTransition();
         _that._initDomEvent(true);
+        if (_opts.observeDOM) {
+            _that._initDOMObserver();
+        }
+        if (_opts.autoBlur) {
+            _that._handleAutoBlur();
+        }
         _that._refresh();
         _that.enable();
     }
@@ -175,6 +185,32 @@ export default class ScrollBase extends DefaultOptions {
     }
 
     /**
+     * 禁用 better-scroll，DOM 事件（如 touchstart、touchmove、touchend）的回调函数不再响应
+     */
+    disable () {
+        this.enabled = false;
+    }
+
+    /**
+     * 销毁better-scroll，解除事件
+     */
+    destroy () {
+        const _that = this;
+        const _opts = _that.defaultOptions;
+        _that.destroyed = true;
+        if (_opts.useTransition) {
+            _that.isInTransition = false;
+            cancelAnimationFrame(_that.probeTimer);
+        } else {
+            _that.isAnimating = false;
+            cancelAnimationFrame(_that.animateTimer);
+        }
+        _that._initDomEvent(false);
+        _that.$emit(EVENT_TYPE.DESTROY);
+        _that._events = null;
+    }
+
+    /**
      * 过滤bounce
      * @returns {Object} 返回过滤后的值
      */
@@ -239,6 +275,117 @@ export default class ScrollBase extends DefaultOptions {
                 }
             });
         }
+    }
+
+    /**
+     * 注册dom变化的监听器
+     */
+    _initDOMObserver () {
+        const _that = this;
+        if (typeof MutationObserver !== 'undefined') {
+            let _observer = new MutationObserver((mutations) => {
+                if (_that._shouldNotRefresh()) {
+                    return;
+                }
+                let _immediateRefresh = false;
+                let _defferRefresh = false;
+                for (let i = 0; i < mutations.length; i++) {
+                    const _mutation = mutations[i];
+                    const _type = _mutation.type;
+                    if (_type !== 'attributes') {
+                        _immediateRefresh = true;
+                        break;
+                    } else {
+                        const _target = _mutation.target;
+                        if (_target !== _that.scroller) {
+                            _defferRefresh = true;
+                            break;
+                        }
+                    }
+                }
+                if (_immediateRefresh) {
+                    _that._refresh();
+                } else if (_defferRefresh) {
+                    setTimeout(() => {
+                        if (!_that._shouldNotRefresh()) {
+                            _that._refresh();
+                        }
+                    }, 60);
+                }
+            });
+            _observer.observe(_that.scroller, {
+                attributes: true,
+                childList: true,
+                subtree: true
+            });
+            _that.$on(EVENT_TYPE.DESTROY, () => {
+                _observer.disconnect();
+            });
+        } else {
+            _that._checkDOMUpdate();
+        }
+    }
+
+    /**
+     * 监听dom的变化
+     */
+    _checkDOMUpdate () {
+        const _that = this;
+        let _scrollRect = getRect(_that.scroller);
+        const _oldW = _scrollRect.width;
+        const _oldH = _scrollRect.height;
+
+        /**
+         * 分步骤监听dom元素的变化
+         */
+        function _check () {
+            if (_that.destroyed) {
+                return;
+            }
+            _scrollRect = getRect(_that.scroller);
+            const _newW = _scrollRect.width;
+            const _newH = _scrollRect.height;
+            if (_newW !== _oldW ||
+                _newH !== _oldH) {
+                _that._refresh();
+            }
+            next();
+        }
+
+        /**
+         * 分步骤监听dom元素的变化
+         */
+        function next () {
+            setTimeout(() => {
+                _check();
+            }, 1000);
+        }
+
+        next();
+    }
+
+    /**
+     * 是否应该refresh
+     * @return {Boolean} 返回是否应该刷新dom
+     */
+    _shouldNotRefresh () {
+        const _that = this;
+        let _outOfBoundary = _that.x < _that.maxScrollX || _that.x > _that.maxScrollX ||
+            _that.y < _that.maxScrollY || _that.y > _that.minScrollY;
+        return _that._isInTransition || _that.isAnimating || _outOfBoundary;
+    }
+
+    /**
+     * 当在开始滑动时应该自动失去焦点
+     */
+    _handleAutoBlur () {
+        const _that = this;
+        _that.$on(EVENT_TYPE.SCROLL_START, () => {
+            const _activeElement = document.activeElement;
+            if (_activeElement && (_activeElement.tagName === 'INPUT' || _activeElement.tagName === 'TEXTAREA')) {
+                _activeElement.blur();
+            }
+        });
     }
 
     /**
