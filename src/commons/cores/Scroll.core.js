@@ -41,6 +41,7 @@ export default class ScrollCore extends ScrollBase {
         }
         _that.initiated = _type;
         _that._preventEvent(evt);
+        _that._setTransition(0, null);
 
         _that._stop();
 
@@ -312,7 +313,7 @@ export default class ScrollCore extends ScrollBase {
         }
 
         const _opts = _that.defaultOptions;
-        setTransition(_that.scroller, 0, null);
+        _that._setTransition(0, null);
         if (_opts.useTransition) {
             cancelAnimationFrame(_that.probeTimer);
             _that.probeTimer = null;
@@ -348,7 +349,7 @@ export default class ScrollCore extends ScrollBase {
             _that._translate(x, y);
         } else if (_opts.useTransition) {
             _that.isInTransition = true;
-            setTransition(_that.scroller, time, easing && easing.style);
+            _that._setTransition(time, easing && easing.style);
             _that._translate(x, y);
             if (time && _opts.probeType === PROBE_TYPE.MOMENTUM) {
                 _that._startProbe();
@@ -509,5 +510,20 @@ export default class ScrollCore extends ScrollBase {
             _that._scrollTo(x, y, time, easing);
         }
         return _res;
+    }
+
+    /**
+     * 设置动画参数
+     * @param {Number} time 动画时长
+     * @param {String|Function} easing 动画规则
+     */
+    _setTransition (time, easing) {
+        const _that = this;
+        setTransition(_that.scroller, time, easing);
+
+        _that.$emit(EVENT_TYPE.UPDATE_TRANSITION, {
+            time: time,
+            easing: easing
+        });
     }
 }

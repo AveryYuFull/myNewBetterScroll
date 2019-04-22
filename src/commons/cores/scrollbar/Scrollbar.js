@@ -1,5 +1,5 @@
 import DefaultOptions from '../../utils/DefaultOptions';
-import { DEFAULT_CONFIG, SCROLLBAR_DIRECTION } from '../../constants';
+import { DEFAULT_CONFIG, SCROLLBAR_DIRECTION, EVENT_TYPE } from '../../constants';
 import genDom from '../../utils/genDom';
 import indicatorFactory from './Indicator';
 import './scrollbar.less';

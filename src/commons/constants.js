@@ -15,7 +15,7 @@ export const PROBE_TYPE = {
  * 默认配置参数
  */
 export const DEFAULT_CONFIG = {
-    scrollX: true, // 是否开启水平滚动条
+    scrollX: false, // 是否开启水平滚动条
     scrollY: true, // 是否开启垂直滚动条
     freeScroll: false, // 是否同时支持水平和垂直滑动
     bindToWrapper: false, // 是否将move/up事件绑定在滚动内容
@@ -57,7 +57,8 @@ export const EVENT_TYPE = {
     SCROLL: 'scroll', // 滚动事件
     TOUCH_END: 'touchEnd', // 鼠标/手指离开
     SCROLL_END: 'scrollEnd', // 滑动结束
-    DESTROY: 'destroy' // destroy事件
+    DESTROY: 'destroy', // destroy事件
+    UPDATE_TRANSITION: 'updateTransition' // 更新动画时长／动画规则
 };
 
 /**

@@ -2,12 +2,11 @@ import DefaultOptions from '../../utils/DefaultOptions';
 import { EVENT_TYPE, SCROLLBAR_DIRECTION, DEFAULT_CONFIG, styleName } from '../../constants';
 import setStyle from '../../utils/setStyle';
 import setTransition from '../../helpers/setTransition';
-import { ease } from '../../utils/ease';
 
 /**
  * indicator的最小长度
  */
-const MIN_INDICATOR_LEN = 9;
+const INDICATOR_MIN_LEN = 8;
 
 export class Indicator extends DefaultOptions {
     defaultOptions = DEFAULT_CONFIG;
@@ -74,12 +73,58 @@ export class Indicator extends DefaultOptions {
      */
     _init () {
         const _that = this;
+        const _scroller = _that.scroller;
+        const _opts = _that.defaultOptions;
         _that._watchVisible();
-        _that.scroller.$on(EVENT_TYPE.REFRESH, () => {
-            setTransition(_that.el);
-            _that._calculate();
+        _scroller.$on(EVENT_TYPE.REFRESH, () => {
+            let _isShow = false;
+            if (_that._shouldShow()) {
+                _isShow = true;
+                setTransition(_that.indicator);
+                _that._calculate();
+                _that._updatePos();
+            }
+            setStyle(_that.el, 'display', _isShow ? 'block' : 'none');
+        });
+
+        const _scrollbar = _opts.scrollbar;
+        const _fade = _scrollbar.fade;
+        _that.visible = !_fade;
+        if (_fade) {
+            _scroller.$on(EVENT_TYPE.BEFORE_SCROLL_START, () => {
+                _that._fade(true, true);
+            });
+            _scroller.$on(EVENT_TYPE.SCROLL_START, () => {
+                _that._fade(true);
+            });
+            _scroller.$on(EVENT_TYPE.SCROLL_END, () => {
+                _that._fade(false);
+            });
+        }
+
+        _scroller.$on(EVENT_TYPE.UPDATE_TRANSITION, (evt) => {
+            const { time = 0, easing = null } = evt || {};
+            setTransition(_that.indicator, time, easing);
+        });
+
+        _scroller.$on(EVENT_TYPE.SCROLL, () => {
             _that._updatePos();
         });
+    }
+
+    /**
+     * 隐藏／显示scrollbar
+     * @param {Boolean} visible 是否显示／隐藏scrollbar
+     * @param {Boolean} hold 是否当以前是隐藏的时候还是保留隐藏状态
+     */
+    _fade (visible, hold) {
+        const _that = this;
+        if (!_that.visible && hold) {
+            return;
+        }
+
+        setTransition(_that.el, visible ? 250 : 500);
+        _that.visible = visible;
     }
 
     /**
@@ -105,7 +150,7 @@ export class Indicator extends DefaultOptions {
          */
         function _calculate (scrollbarSize, scrollerSize, prop, maxScroll) {
             let _indicatorSize = Math.floor((scrollbarSize * scrollbarSize) / (scrollerSize || scrollbarSize || 1));
-            _indicatorSize = Math.max(_indicatorSize, MIN_INDICATOR_LEN);
+            _indicatorSize = Math.max(_indicatorSize, INDICATOR_MIN_LEN);
             _that.indicatorSize = _indicatorSize;
             if (prop) {
                 setStyle(_that.indicator, prop, `${_indicatorSize}px`);
@@ -153,12 +198,12 @@ export class Indicator extends DefaultOptions {
     _updatePos () {
         const _that = this;
         const _dir = _that.direction;
-        const _opts = _that.defaultOptions;
+        const _scroller = _that.scroller;
         let _pos = _that.pos;
         if (_dir === SCROLLBAR_DIRECTION.HORIZONTAL) {
-            _pos = _updatePos(_that.x * _that.sizeRatio, 'width');
+            _pos = _updatePos(_scroller.x * _that.sizeRatio, 'width');
         } else if (_dir === SCROLLBAR_DIRECTION.VERTICAL) {
-            _pos = _updatePos(_that.y * _that.sizeRatio, 'height');
+            _pos = _updatePos(_scroller.y * _that.sizeRatio, 'height');
         }
 
         _that._translate(_pos);
@@ -173,16 +218,13 @@ export class Indicator extends DefaultOptions {
             let _indicatorSize = _that.indicatorSize;
             let _maxPos = _that.maxPos || 0;
             if (pos < 0) {
-                setTransition(_opts.bounceTime, ease.bounce);
-                _that.indicatorSize = _indicatorSize + pos * 3;
-                setStyle(_that.indicator, prop, `${_that.indicatorSize}px`);
+                _indicatorSize = Math.max(_indicatorSize + pos * 3, INDICATOR_MIN_LEN);
                 pos = 0;
             } else if (pos > _maxPos) {
-                setTransition(_opts.bounceTime, ease.bounce);
-                _that.indicatorSize = _indicatorSize - (pos - _maxPos) * 3;
-                setStyle(_that.indicator, prop, `${_that.indicatorSize}px`);
-                pos = _maxPos;
+                _indicatorSize = Math.max(_indicatorSize - (pos - _maxPos) * 3, INDICATOR_MIN_LEN);
+                pos = _maxPos + _that.indicatorSize - _indicatorSize;
             }
+            setStyle(_that.indicator, prop, `${_indicatorSize}px`);
             return pos;
         }
     }
@@ -212,6 +254,18 @@ export class Indicator extends DefaultOptions {
                 }
             });
         }
+    }
+
+    /**
+     * 是否应该显示scrollbar
+     * @returns {Boolean} 返回显示scrollbar的标识
+     */
+    _shouldShow () {
+        const _that = this;
+        const _dir = _that.direction;
+        const _scroller = _that.scroller;
+        return (_dir === SCROLLBAR_DIRECTION.HORIZONTAL && _scroller.hasScrollX) ||
+            (_dir === SCROLLBAR_DIRECTION.VERTICAL && _scroller.hasScrollY);
     }
 }
 
