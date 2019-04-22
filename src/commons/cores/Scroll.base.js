@@ -6,7 +6,7 @@ import getStyle from '../utils/getStyle';
 import eventUtil from '../utils/eventUtil';
 import isTouch from '../utils/isTouch';
 import preventDefaultException from '../utils/preventDefaultException';
-import setStyle from '../utils/setStyle';
+import scrollbarFactory from './scrollbar/Scrollbar';
 export default class ScrollBase extends DefaultOptions {
     defaultOptions = DEFAULT_CONFIG;
     /**
@@ -49,6 +49,7 @@ export default class ScrollBase extends DefaultOptions {
         if (_opts.autoBlur) {
             _that._handleAutoBlur();
         }
+        _that._initExtFeatures();
         _that._refresh();
         _that.enable();
     }
@@ -119,6 +120,17 @@ export default class ScrollBase extends DefaultOptions {
             case styleName.transitionEnd:
                 _that._transitionEnd(evt);
                 break;
+        }
+    }
+
+    /**
+     * 初始化额外的功能
+     */
+    _initExtFeatures () {
+        const _that = this;
+        const _opts = _that.defaultOptions;
+        if (_opts.scrollbar) {
+            scrollbarFactory(_that, _opts);
         }
     }
 
@@ -386,16 +398,5 @@ export default class ScrollBase extends DefaultOptions {
                 _activeElement.blur();
             }
         });
-    }
-
-    /**
-     * 设置动画参数
-     * @param {Number} time 动画时长
-     * @param {String|Function} easing 动画规则
-     */
-    _setTransition (time, easing) {
-        const _scroller = this.scroller;
-        setStyle(_scroller, styleName.transitionDuration, `${time || 0}ms`);
-        setStyle(_scroller, styleName.transitionTimingFunction, easing);
     }
 }

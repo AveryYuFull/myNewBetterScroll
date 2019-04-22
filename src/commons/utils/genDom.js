@@ -24,7 +24,7 @@ export default function genDom (tagName, options) {
 
     // class的配置
     let _clsList = options.classList || [];
-    if (!_clsList instanceof Array) {
+    if (!(_clsList instanceof Array)) {
         _clsList = [_clsList];
     }
     _clsList.forEach((cls) => {

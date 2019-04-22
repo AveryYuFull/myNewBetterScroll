@@ -119,4 +119,4 @@ export const MOVING_DIRECTION = {
 export const SCROLLBAR_DIRECTION = {
     HORIZONTAL: 'horizontal', // 水平滚动条
     VERTICAL: 'vertical' // 垂直滚动条
-}
+};

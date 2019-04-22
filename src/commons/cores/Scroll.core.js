@@ -12,6 +12,7 @@ import momentum from '../utils/momentum';
 import setStyle from '../utils/setStyle';
 import { requestAnimationFrame, cancelAnimationFrame } from '../utils/raf';
 import getStyle from '../utils/getStyle';
+import setTransition from '../helpers/setTransition';
 
 export default class ScrollCore extends ScrollBase {
     defaultOptions = DEFAULT_CONFIG;
@@ -311,7 +312,7 @@ export default class ScrollCore extends ScrollBase {
         }
 
         const _opts = _that.defaultOptions;
-        _that._setTransition(0, null);
+        setTransition(_that.scroller, 0, null);
         if (_opts.useTransition) {
             cancelAnimationFrame(_that.probeTimer);
             _that.probeTimer = null;
@@ -347,7 +348,7 @@ export default class ScrollCore extends ScrollBase {
             _that._translate(x, y);
         } else if (_opts.useTransition) {
             _that.isInTransition = true;
-            _that._setTransition(time, easing && easing.style);
+            setTransition(_that.scroller, time, easing && easing.style);
             _that._translate(x, y);
             if (time && _opts.probeType === PROBE_TYPE.MOMENTUM) {
                 _that._startProbe();
