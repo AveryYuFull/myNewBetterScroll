@@ -34,7 +34,7 @@ export class Indicator extends DefaultOptions {
     /**
      * indicator的大小
      */
-    indicatorSize = 0;
+    size = 0;
     /**
      * 滚动比率
      */
@@ -81,42 +81,52 @@ export class Indicator extends DefaultOptions {
         const _scroller = _that.scroller;
         const _opts = _that.defaultOptions;
         _that._watchVisible();
-        _scroller.$on(EVENT_TYPE.REFRESH, () => {
-            let _isShow = false;
-            if (_that._shouldShow()) {
-                _isShow = true;
-                setTransition(_that.indicator);
-                _that._calculate();
-                _that._updatePos();
-            }
-            setStyle(_that.el, 'display', _isShow ? 'block' : 'none');
-        });
 
         const _scrollbar = _opts.scrollbar;
         const _fade = _scrollbar.fade;
         _that.visible = !_fade;
-        if (_fade) {
-            _scroller.$on(EVENT_TYPE.BEFORE_SCROLL_START, () => {
-                _that._fade(true, true);
-            });
-            _scroller.$on(EVENT_TYPE.SCROLL_START, () => {
-                _that._fade(true);
-            });
-            _scroller.$on(EVENT_TYPE.SCROLL_END, () => {
-                _that._fade(false);
-            });
-        }
 
-        _scroller.$on(EVENT_TYPE.UPDATE_TRANSITION, (evt) => {
-            const { time = 0, easing = null } = evt || {};
-            setTransition(_that.indicator, time, easing);
-        });
-
-        _scroller.$on(EVENT_TYPE.SCROLL, () => {
-            _that._updatePos();
-        });
         if (_scrollbar.interactive) {
             _that._initDomEvent(true);
+        }
+    }
+
+    /**
+     * 设置动画时长和动画规则
+     * @param {Number} time 动画时长
+     * @param {Function} easing 动画规则
+     */
+    setTransition (time, easing) {
+        time = time || 0;
+        easing = easing || null;
+        setTransition(_that.indicator, time, easing);
+    }
+
+    /**
+     * 刷新
+     */
+    refresh () {
+        const _that = this;
+        let _isShow = false;
+        if (_that._shouldShow()) {
+            _isShow = true;
+            setTransition(_that.indicator);
+            _that._calculate();
+            _that.updatePos();
+        }
+        setStyle(_that.el, 'display', _isShow ? 'block' : 'none');
+    }
+
+    /**
+     * 销毁
+     */
+    destroy () {
+        const _that = this;
+        const _el = _that.el;
+        const _parentNode = _el && _el.parentNode;
+        _that._initDomEvent(false);
+        if (_parentNode) {
+            _parentNode.removeChild(_el);
         }
     }
 
@@ -294,7 +304,7 @@ export class Indicator extends DefaultOptions {
      * @param {Boolean} visible 是否显示／隐藏scrollbar
      * @param {Boolean} hold 是否当以前是隐藏的时候还是保留隐藏状态
      */
-    _fade (visible, hold) {
+    fade (visible, hold) {
         const _that = this;
         if (!_that.visible && hold) {
             return;
@@ -326,13 +336,13 @@ export class Indicator extends DefaultOptions {
          * @param {Number} maxScroll 最大可以滑动距离
          */
         function _calculate (scrollbarSize, scrollerSize, prop, maxScroll) {
-            let _indicatorSize = Math.floor((scrollbarSize * scrollbarSize) / (scrollerSize || scrollbarSize || 1));
-            _indicatorSize = Math.max(_indicatorSize, INDICATOR_MIN_LEN);
-            _that.indicatorSize = _indicatorSize;
+            let _size = Math.floor((scrollbarSize * scrollbarSize) / (scrollerSize || scrollbarSize || 1));
+            _size = Math.max(_size, INDICATOR_MIN_LEN);
+            _that.size = _size;
             if (prop) {
-                setStyle(_that.indicator, prop, `${_indicatorSize}px`);
+                setStyle(_that.indicator, prop, `${_size}px`);
             }
-            _that.maxPos = scrollbarSize - _indicatorSize;
+            _that.maxPos = scrollbarSize - _size;
             _that.sizeRatio = _that.maxPos / maxScroll;
         }
     }
@@ -372,7 +382,7 @@ export class Indicator extends DefaultOptions {
     /**
      * 更新位置
      */
-    _updatePos () {
+    updatePos () {
         const _that = this;
         const _dir = _that.direction;
         const _scroller = _that.scroller;
@@ -392,16 +402,16 @@ export class Indicator extends DefaultOptions {
          * @returns {Number} 返回过滤好的位置信息
          */
         function _updatePos (pos, prop) {
-            let _indicatorSize = _that.indicatorSize;
+            let _size = _that.size;
             let _maxPos = _that.maxPos || 0;
             if (pos < 0) {
-                _indicatorSize = Math.max(_indicatorSize + pos * 3, INDICATOR_MIN_LEN);
+                _size = Math.max(_size + pos * 3, INDICATOR_MIN_LEN);
                 pos = 0;
             } else if (pos > _maxPos) {
-                _indicatorSize = Math.max(_indicatorSize - (pos - _maxPos) * 3, INDICATOR_MIN_LEN);
-                pos = _maxPos + _that.indicatorSize - _indicatorSize;
+                _size = Math.max(_size - (pos - _maxPos) * 3, INDICATOR_MIN_LEN);
+                pos = _maxPos + _that.size - _size;
             }
-            setStyle(_that.indicator, prop, `${_indicatorSize}px`);
+            setStyle(_that.indicator, prop, `${_size}px`);
             return pos;
         }
     }

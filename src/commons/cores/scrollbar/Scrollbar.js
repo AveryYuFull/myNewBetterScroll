@@ -2,6 +2,8 @@ import DefaultOptions from '../../utils/DefaultOptions';
 import { DEFAULT_CONFIG, SCROLLBAR_DIRECTION, EVENT_TYPE } from '../../constants';
 import genDom from '../../utils/genDom';
 import indicatorFactory from './Indicator';
+import callFn from '../../utils/callFn';
+
 import './scrollbar.less';
 
 export class Scrollbar extends DefaultOptions {
@@ -31,18 +33,63 @@ export class Scrollbar extends DefaultOptions {
      */
     _init () {
         const _that = this;
-        const _options = _that.defaultOptions;
+        const _opts = _that.defaultOptions;
         const _scroller = _that.scroller;
-        if (_options.scrollX) {
+        if (_opts.scrollX) {
             let _scrollbarX = _that._createScrollbar(SCROLLBAR_DIRECTION.HORIZONTAL);
             _that._insertTo(_scrollbarX);
-            _that.indicators.push(indicatorFactory(_scrollbarX, _scroller, SCROLLBAR_DIRECTION.HORIZONTAL, _options));
+            _that.indicators.push(indicatorFactory(_scrollbarX, _scroller, SCROLLBAR_DIRECTION.HORIZONTAL, _opts));
         }
-        if (_options.scrollY) {
+        if (_opts.scrollY) {
             let _scrollbarY = _that._createScrollbar(SCROLLBAR_DIRECTION.VERTICAL);
             _that._insertTo(_scrollbarY);
-            _that.indicators.push(indicatorFactory(_scrollbarY, _scroller, SCROLLBAR_DIRECTION.VERTICAL, _options));
+            _that.indicators.push(indicatorFactory(_scrollbarY, _scroller, SCROLLBAR_DIRECTION.VERTICAL, _opts));
         }
+
+        _scroller.$on(EVENT_TYPE.REFRESH, () => {
+            _that._each('refresh');
+        });
+
+        const _scrollbar = _opts.scrollbar;
+        const _fade = _scrollbar.fade;
+        if (_fade) {
+            _scroller.$on(EVENT_TYPE.BEFORE_SCROLL_START, () => {
+                _that._each('fade', [true, true]);
+            });
+            _scroller.$on(EVENT_TYPE.SCROLL_START, () => {
+                _that._each('fade', [true]);
+            });
+            _scroller.$on(EVENT_TYPE.SCROLL_END, () => {
+                _that._each('fade', [false]);
+            });
+        }
+
+        _scroller.$on(EVENT_TYPE.UPDATE_TRANSITION, (evt) => {
+            const { time = 0, easing = null } = evt || {};
+            _that._each('setTransition', [time, easing]);
+        });
+
+        _scroller.$on(EVENT_TYPE.SCROLL, () => {
+            _that._each('updatePos');
+        });
+        _scroller.$on(EVENT_TYPE.DESTROY, () => {
+            _that._each('destroy');
+        });
+    }
+
+    /**
+     * 遍历indicators数组
+     * @param {String} fnName 回调方法名
+     * @param {Object} params 调用方法参数
+     */
+    _each (fnName, params) {
+        const _that = this;
+        const _indicators = _that.indicators || [];
+        _indicators.forEach((indicator) => {
+            if (indicator) {
+                callFn(indicator[fnName], params, indicator);
+            }
+        });
     }
 
     /**
