@@ -4,12 +4,12 @@ import isTouch from './utils/isTouch';
 /**
  * 派发事件时机类型
  */
-export const PROBE_TYPE = {
-    NORMAL: 0, // 默认
-    DEBOUNCE: 1, // 非实时派发滚动条事件
-    REAL_TIME: 2, // 实时派发滚动条事件
-    MOMENTUM: 3 // 不仅实时派发滚动条事件，而且在momentum动画也派发滚动条事件
-};
+// export const PROBE_TYPE = {
+//     NORMAL: 0, // 默认
+//     DEBOUNCE: 1, // 非实时派发滚动条事件
+//     REAL_TIME: 2, // 实时派发滚动条事件
+//     MOMENTUM: 3 // 不仅实时派发滚动条事件，而且在momentum动画也派发滚动条事件
+// };
 
 /**
  * 默认配置参数
@@ -31,7 +31,7 @@ export const DEFAULT_CONFIG = {
     momentumLimitDistance: 15, // 只有当快速滑动的距离大于momentumLimitDistance, 才开启momentum动画
     directionLockThreshold: 5, // 固定方向的阀值
     eventPassthrough: '', // 可选值（horizontal／vertical），如果希望在某个方向上使用原生滚动，就设置这个值
-    probeType: PROBE_TYPE.MOMENTUM, // 派发滚动条事件机制
+    // probeType: PROBE_TYPE.MOMENTUM, // 派发滚动条事件机制
     bounce: true, // 是否开启回弹
     bounceTime: 800, // 回弹动画时长
     deceleration: 0.0015, // momentum动画的减速度

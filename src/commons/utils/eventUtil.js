@@ -10,6 +10,13 @@ function _addEvent (el, type, fn, capture) {
         return;
     }
 
+    if (!(capture instanceof Object)) {
+        capture = {
+            capture: capture,
+            passive: false
+        };
+    }
+
     if (el.addEventListener instanceof Function) {
         el.addEventListener(type, fn, capture);
     } else if (el.attachEvent instanceof Function) {
@@ -29,6 +36,13 @@ function _addEvent (el, type, fn, capture) {
 function _removeEvent (el, type, fn, capture) {
     if (!el || !type || !fn) {
         return;
+    }
+
+    if (!(capture instanceof Object)) {
+        capture = {
+            capture: capture,
+            passive: false
+        };
     }
 
     if (el.removeEventListener instanceof Function) {

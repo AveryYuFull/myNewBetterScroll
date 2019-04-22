@@ -111,24 +111,24 @@ export default class ScrollCore extends ScrollBase {
                 y: _that.y
             });
         }
-        const _probeType = _options.probeType;
+        // const _probeType = _options.probeType;
         if (_timestamp - _that.startTime > _options.momentumLimitTime) {
             _that.startX = _that.x;
             _that.startY = _that.y;
             _that.startTime = getNow();
-            if (_probeType === PROBE_TYPE.DEBOUNCE) {
-                _that.$emit(EVENT_TYPE.SCROLL, {
-                    x: _that.x,
-                    y: _that.y
-                });
-            }
+            // if (_probeType === PROBE_TYPE.DEBOUNCE) {
+            //     _that.$emit(EVENT_TYPE.SCROLL, {
+            //         x: _that.x,
+            //         y: _that.y
+            //     });
+            // }
         }
-        if (_probeType > PROBE_TYPE.DEBOUNCE) {
-            _that.$emit(EVENT_TYPE.SCROLL, {
-                x: _that.x,
-                y: _that.y
-            });
-        }
+        // if (_probeType > PROBE_TYPE.DEBOUNCE) {
+        //     _that.$emit(EVENT_TYPE.SCROLL, {
+        //         x: _that.x,
+        //         y: _that.y
+        //     });
+        // }
     }
     /**
      * 滑动结束
@@ -352,7 +352,10 @@ export default class ScrollCore extends ScrollBase {
             _that.isInTransition = true;
             _that._setTransition(time, easing && easing.style);
             _that._translate(x, y);
-            if (time && _opts.probeType === PROBE_TYPE.MOMENTUM) {
+            // if (time && _opts.probeType === PROBE_TYPE.MOMENTUM) {
+            //     _that._startProbe();
+            // }
+            if (time) {
                 _that._startProbe();
             }
         } else {
@@ -380,12 +383,12 @@ export default class ScrollCore extends ScrollBase {
             let _curTime = getNow();
             if (_curTime >= _destTime) {
                 _that._translate(x, y);
-                if (_opts.probeType === PROBE_TYPE.MOMENTUM) {
-                    _that.$emit(EVENT_TYPE.SCROLL, {
-                        x: _that.x,
-                        y: _that.y
-                    });
-                }
+                // if (_opts.probeType === PROBE_TYPE.MOMENTUM) {
+                //     _that.$emit(EVENT_TYPE.SCROLL, {
+                //         x: _that.x,
+                //         y: _that.y
+                //     });
+                // }
                 _that.$dispatchEvent(_that.scroller, styleName.transitionEnd);
                 return;
             }
@@ -393,12 +396,12 @@ export default class ScrollCore extends ScrollBase {
             let _newX = _startX + easing(_curTime) * (x - _startX);
             let _newY = _startY + easing(_curTime) * (y - _startY);
             _that._translate(_newX, _newY);
-            if (_opts.probeType === PROBE_TYPE.MOMENTUM) {
-                _that.$emit(EVENT_TYPE.SCROLL, {
-                    x: _that.x,
-                    y: _that.y
-                });
-            }
+            // if (_opts.probeType === PROBE_TYPE.MOMENTUM) {
+            //     _that.$emit(EVENT_TYPE.SCROLL, {
+            //         x: _that.x,
+            //         y: _that.y
+            //     });
+            // }
 
             _that.animateTimer = requestAnimationFrame(_step);
         }
@@ -479,6 +482,11 @@ export default class ScrollCore extends ScrollBase {
         }
         _that.x = x;
         _that.y = y;
+
+        _that.$emit(EVENT_TYPE.SCROLL, {
+            x: _that.x,
+            y: _that.y
+        });
     }
 
     /**

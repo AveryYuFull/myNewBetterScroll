@@ -116,23 +116,24 @@ export class Indicator extends DefaultOptions {
             _that._updatePos();
         });
         if (_scrollbar.interactive) {
-            _that._initDomEvent();
+            _that._initDomEvent(true);
         }
     }
 
     /**
      * 初始化dom事件
+     * @param {Boolean} flag 当flag为true，则注册事件，当flag为false，则取消事件
      */
-    _initDomEvent () {
+    _initDomEvent (flag) {
         const _that = this;
         const _opts = _that.defaultOptions;
         if (!_opts.disableMouse) {
-            eventUtil.initEventListener(_that.indicator, 'mousedown', _that);
-            eventUtil.initEventListener(window, ['mousemove', 'mousecancel', 'mouseup'], _that);
+            eventUtil.initEventListener(_that.indicator, 'mousedown', _that, flag);
+            eventUtil.initEventListener(window, ['mousemove', 'mousecancel', 'mouseup'], _that, flag);
         }
         if (!_opts.disableTouch && isTouch) {
-            eventUtil.initEventListener(_that.indicator, 'touchstart', _that);
-            eventUtil.initEventListener(window, ['touchmove', 'touchcancel', 'touchend'], _that);
+            eventUtil.initEventListener(_that.indicator, 'touchstart', _that, flag);
+            eventUtil.initEventListener(window, ['touchmove', 'touchcancel', 'touchend'], _that, flag);
         }
     }
 
@@ -177,7 +178,7 @@ export class Indicator extends DefaultOptions {
         const _scroller = _that.scroller;
         const _opts = _that.defaultOptions;
         const _dir = _that.direction;
-        if (_scroller.destroy || !_scroller.enabled ||
+        if (_scroller.destroyed || !_scroller.enabled ||
             (_that.initiated && _that.initiated !== _evtType)) {
             return;
         }
@@ -200,7 +201,7 @@ export class Indicator extends DefaultOptions {
         const _that = this;
         const _evtType = evtType[evt && evt.type];
         const _scroller = _that.scroller;
-        if (_scroller.destroy || !_scroller.enabled ||
+        if (_scroller.destroyed || !_scroller.enabled ||
             (_that.initiated !== _evtType)) {
             return;
         }
@@ -235,7 +236,7 @@ export class Indicator extends DefaultOptions {
         const _that = this;
         const _evtType = evtType[evt && evt.type];
         const _scroller = _that.scroller;
-        if (_scroller.destroy || !_scroller.enabled ||
+        if (_scroller.destroyed || !_scroller.enabled ||
             (_that.initiated !== _evtType)) {
             return;
         }
@@ -270,6 +271,7 @@ export class Indicator extends DefaultOptions {
      */
     _setPos (pos) {
         const _that = this;
+        const _scroller = _that.scroller;
         const _dir = _that.direction;
         if (pos < 0) {
             pos = 0;
