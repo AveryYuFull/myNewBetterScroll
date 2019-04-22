@@ -42,7 +42,7 @@ export const DEFAULT_CONFIG = {
     observeDOM: true, // 是否监听dom的变化
     autoBlur: true, // 是否应该blur
     scrollbar: { // 配置滚动条
-        fade: true,
+        fade: false,
         interactive: true
     }
 };

@@ -1,7 +1,12 @@
+/* eslint-disable */
 import DefaultOptions from '../../utils/DefaultOptions';
-import { EVENT_TYPE, SCROLLBAR_DIRECTION, DEFAULT_CONFIG, styleName } from '../../constants';
+import { EVENT_TYPE, SCROLLBAR_DIRECTION, DEFAULT_CONFIG,
+    styleName, evtType, TOUCH_EVENT } from '../../constants';
 import setStyle from '../../utils/setStyle';
 import setTransition from '../../helpers/setTransition';
+import eventUtil from '../../utils/eventUtil';
+import isTouch from '../../utils/isTouch';
+import preventEvent from '../../helpers/preventEvent';
 
 /**
  * indicator的最小长度
@@ -110,6 +115,176 @@ export class Indicator extends DefaultOptions {
         _scroller.$on(EVENT_TYPE.SCROLL, () => {
             _that._updatePos();
         });
+        if (_scrollbar.interactive) {
+            _that._initDomEvent();
+        }
+    }
+
+    /**
+     * 初始化dom事件
+     */
+    _initDomEvent () {
+        const _that = this;
+        const _opts = _that.defaultOptions;
+        if (!_opts.disableMouse) {
+            eventUtil.initEventListener(_that.indicator, 'mousedown', _that);
+            eventUtil.initEventListener(window, ['mousemove', 'mousecancel', 'mouseup'], _that);
+        }
+        if (!_opts.disableTouch && isTouch) {
+            eventUtil.initEventListener(_that.indicator, 'touchstart', _that);
+            eventUtil.initEventListener(window, ['touchmove', 'touchcancel', 'touchend'], _that);
+        }
+    }
+
+    /**
+     * 事件处理程序
+     * @param {Event} evt 事件对象
+     */
+    handleEvent (evt) {
+        const _that = this;
+        const _type = evt && evt.type;
+        switch (_type) {
+            case 'mousedown':
+            case 'touchstart':
+                _that._start(evt);
+                break;
+            case 'mousemove':
+            case 'touchmove':
+                _that._move(evt);
+                break;
+            case 'mousecancel':
+            case 'touchcancel':
+            case 'mouseup':
+            case 'touchend':
+                _that._end(evt);
+                break;
+        }
+    }
+
+    /**
+     * 准备滑动前
+     * @param {Event} evt 事件对象
+     */
+    _start (evt) {
+        const _that = this;
+        const _evtType = evtType[evt.type || ''];
+        if (_evtType !== TOUCH_EVENT) {
+            const _button = eventUtil.getButton(evt);
+            if (_button !== '0') {
+                return;
+            }
+        }
+        const _scroller = _that.scroller;
+        const _opts = _that.defaultOptions;
+        const _dir = _that.direction;
+        if (_scroller.destroy || !_scroller.enabled ||
+            (_that.initiated && _that.initiated !== _evtType)) {
+            return;
+        }
+        _that.initiated = _evtType;
+
+        preventEvent(evt, _opts);
+        _that.moved = false;
+        _that.point = _that._getPoint(evt);
+        _scroller.$emit(EVENT_TYPE.BEFORE_SCROLL_START, {
+            x: _scroller.x,
+            y: _scroller.y
+        });
+    }
+
+    /**
+     * 滚动条滑动
+     * @param {Event} evt 事件对象
+     */
+    _move (evt) {
+        const _that = this;
+        const _evtType = evtType[evt && evt.type];
+        const _scroller = _that.scroller;
+        if (_scroller.destroy || !_scroller.enabled ||
+            (_that.initiated !== _evtType)) {
+            return;
+        }
+        const _opts = _that.defaultOptions;
+        const _dir = _that.direction;
+        preventEvent(evt, _opts);
+        if (!_that.moved) {
+            _scroller.$emit(EVENT_TYPE.SCROLL_START, {
+                x: _scroller.x,
+                y: _scroller.y
+            });
+        }
+        const _point = evt.touches ? evt.touches[0] : evt;
+
+        let _delta;
+        if (_dir === SCROLLBAR_DIRECTION.HORIZONTAL) {
+            _delta = _point.pageX - _that.point;
+        } else if (_dir === SCROLLBAR_DIRECTION.VERTICAL) {
+            _delta = _point.pageY - _that.point;
+        }
+        _that.point = _that._getPoint(evt);
+        if (_delta) {
+            _that._setPos(_that.pos + _delta);
+        }
+    }
+
+    /**
+     * 滑动结束
+     * @param {Event} evt 事件对象
+     */
+    _end (evt) {
+        const _that = this;
+        const _evtType = evtType[evt && evt.type];
+        const _scroller = _that.scroller;
+        if (_scroller.destroy || !_scroller.enabled ||
+            (_that.initiated !== _evtType)) {
+            return;
+        }
+        _that.initiated = false;
+        _that.$emit(EVENT_TYPE.SCROLL_END, {
+            x: _scroller.x,
+            y: _scroller.y
+        });
+    }
+
+    /**
+     * 获取当前位置
+     * @param {Event} evt 事件对象
+     * @returns {Number} 返回当前的位置信息
+     */
+    _getPoint (evt) {
+        const _that = this;
+        let _res;
+        const _dir = _that.direction;
+        const _point = evt.touches ? evt.touches[0] : evt;
+        if (_dir === SCROLLBAR_DIRECTION.HORIZONTAL) {
+            _res = _point.pageX;
+        } else if (_dir === SCROLLBAR_DIRECTION.VERTICAL) {
+            _res = _point.pageY;
+        }
+        return _res;
+    }
+
+    /**
+     * 设置位置
+     * @param {Number} pos 新的位置
+     */
+    _setPos (pos) {
+        const _that = this;
+        const _dir = _that.direction;
+        if (pos < 0) {
+            pos = 0;
+        } else if (pos > _that.maxPos) {
+            pos = _that.maxPos;
+        }
+        const _pos = pos / _that.sizeRatio;
+        let _newX = _scroller.x;
+        let _newY = _scroller.y;
+        if (_dir === SCROLLBAR_DIRECTION.HORIZONTAL) {
+            _newX = _pos;
+        } else if (_dir === SCROLLBAR_DIRECTION.VERTICAL) {
+            _newY = _pos;
+        }
+        _scroller._scrollTo(_newX, _newY);
     }
 
     /**

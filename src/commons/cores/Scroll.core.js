@@ -13,6 +13,7 @@ import setStyle from '../utils/setStyle';
 import { requestAnimationFrame, cancelAnimationFrame } from '../utils/raf';
 import getStyle from '../utils/getStyle';
 import setTransition from '../helpers/setTransition';
+import preventEvent from '../helpers/preventEvent';
 
 export default class ScrollCore extends ScrollBase {
     defaultOptions = DEFAULT_CONFIG;
@@ -40,7 +41,7 @@ export default class ScrollCore extends ScrollBase {
             return;
         }
         _that.initiated = _type;
-        _that._preventEvent(evt);
+        preventEvent(evt);
         _that._setTransition(0, null);
 
         _that._stop();
@@ -78,7 +79,7 @@ export default class ScrollCore extends ScrollBase {
         if (_that.destroyed || !_that.enabled || _that.initiated !== _type) {
             return;
         }
-        _that._preventEvent(evt);
+        preventEvent(evt);
         const _options = _that.defaultOptions;
         let _point = evt.touches ? evt.touches[0] : evt;
         let _deltaX = _point.pageX - _that.pointX;

@@ -5,7 +5,6 @@ import getRect from '../utils/getRect';
 import getStyle from '../utils/getStyle';
 import eventUtil from '../utils/eventUtil';
 import isTouch from '../utils/isTouch';
-import preventDefaultException from '../utils/preventDefaultException';
 import scrollbarFactory from './scrollbar/Scrollbar';
 export default class ScrollBase extends DefaultOptions {
     defaultOptions = DEFAULT_CONFIG;
@@ -244,22 +243,6 @@ export default class ScrollBase extends DefaultOptions {
             };
         }
         return _res;
-    }
-
-    /**
-     * 阻止事件默认行为/冒泡
-     * @param {Event} evt 事件对象
-     */
-    _preventEvent (evt) {
-        const _that = this;
-        const _options = _that.defaultOptions;
-        if (_options.preventDefault &&
-            !preventDefaultException(eventUtil.getTarget(evt), _options.preventDefaultException)) {
-            eventUtil.preventDefault(evt);
-        }
-        if (_options.stopPropagation) {
-            eventUtil.stopPropagation(evt);
-        }
     }
 
     /**
