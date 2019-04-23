@@ -6,6 +6,7 @@ import getStyle from '../utils/getStyle';
 import eventUtil from '../utils/eventUtil';
 import isTouch from '../utils/isTouch';
 import scrollbarFactory from './scrollbar/Scrollbar';
+import pullUpLoadFactory from './pullUpLoad/PullUpLoad';
 export default class ScrollBase extends DefaultOptions {
     defaultOptions = DEFAULT_CONFIG;
     /**
@@ -130,6 +131,9 @@ export default class ScrollBase extends DefaultOptions {
         const _opts = _that.defaultOptions;
         if (_opts.scrollbar) {
             scrollbarFactory(_that, _opts);
+        }
+        if (_opts.pullUpLoad) {
+            pullUpLoadFactory(_that, _opts);
         }
     }
 

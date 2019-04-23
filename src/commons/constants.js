@@ -44,7 +44,8 @@ export const DEFAULT_CONFIG = {
     scrollbar: { // 配置滚动条
         fade: false,
         interactive: true
-    }
+    },
+    pullUpLoad: false // 配置用于做上拉加载功能
 };
 
 /**
@@ -58,7 +59,8 @@ export const EVENT_TYPE = {
     TOUCH_END: 'touchEnd', // 鼠标/手指离开
     SCROLL_END: 'scrollEnd', // 滑动结束
     DESTROY: 'destroy', // destroy事件
-    UPDATE_TRANSITION: 'updateTransition' // 更新动画时长／动画规则
+    UPDATE_TRANSITION: 'updateTransition', // 更新动画时长／动画规则
+    PULLING_UP: 'pullingUp' // 上拉加载事件类型
 };
 
 /**

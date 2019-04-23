@@ -97,6 +97,7 @@ export class Indicator extends DefaultOptions {
      * @param {Function} easing 动画规则
      */
     setTransition (time, easing) {
+        const _that = this;
         time = time || 0;
         easing = easing || null;
         setTransition(_that.indicator, time, easing);
@@ -187,7 +188,6 @@ export class Indicator extends DefaultOptions {
         }
         const _scroller = _that.scroller;
         const _opts = _that.defaultOptions;
-        const _dir = _that.direction;
         if (_scroller.destroyed || !_scroller.enabled ||
             (_that.initiated && _that.initiated !== _evtType)) {
             return;
