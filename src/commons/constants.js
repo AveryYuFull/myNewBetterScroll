@@ -45,7 +45,7 @@ export const DEFAULT_CONFIG = {
         fade: false,
         interactive: true
     },
-    pullUpLoad: false // 配置用于做上拉加载功能
+    pullupLoad: true // 配置用于做上拉加载功能
 };
 
 /**

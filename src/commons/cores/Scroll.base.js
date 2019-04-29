@@ -6,7 +6,7 @@ import getStyle from '../utils/getStyle';
 import eventUtil from '../utils/eventUtil';
 import isTouch from '../utils/isTouch';
 import scrollbarFactory from './scrollbar/Scrollbar';
-import pullUpLoadFactory from './pullUpLoad/PullUpLoad';
+import pullupLoadFactory from './pullupLoad/PullupLoad';
 export default class ScrollBase extends DefaultOptions {
     defaultOptions = DEFAULT_CONFIG;
     /**
@@ -24,6 +24,11 @@ export default class ScrollBase extends DefaultOptions {
     destroyed = false;
     x = 0;
     y = 0;
+
+    /**
+     * 上拉加载对象
+     */
+    pullupObj = null;
 
     constructor (el, options) {
         super(options);
@@ -132,8 +137,11 @@ export default class ScrollBase extends DefaultOptions {
         if (_opts.scrollbar) {
             scrollbarFactory(_that, _opts);
         }
-        if (_opts.pullUpLoad) {
-            pullUpLoadFactory(_that, _opts);
+        if (_opts.pullupLoad) {
+            _that.pullupObj = pullupLoadFactory(_that, _opts);
+            if (_that.pullupObj) {
+                _that.pullupObj.$on(EVENT_TYPE.PULLING_UP);
+            }
         }
     }
 
@@ -190,39 +198,6 @@ export default class ScrollBase extends DefaultOptions {
         }
 
         _that.$emit(EVENT_TYPE.REFRESH);
-    }
-
-    /**
-     * 是否开启滚动
-     */
-    enable () {
-        this.enabled = true;
-    }
-
-    /**
-     * 禁用 better-scroll，DOM 事件（如 touchstart、touchmove、touchend）的回调函数不再响应
-     */
-    disable () {
-        this.enabled = false;
-    }
-
-    /**
-     * 销毁better-scroll，解除事件
-     */
-    destroy () {
-        const _that = this;
-        const _opts = _that.defaultOptions;
-        _that.destroyed = true;
-        if (_opts.useTransition) {
-            _that.isInTransition = false;
-            cancelAnimationFrame(_that.probeTimer);
-        } else {
-            _that.isAnimating = false;
-            cancelAnimationFrame(_that.animateTimer);
-        }
-        _that._initDomEvent(false);
-        _that.$emit(EVENT_TYPE.DESTROY);
-        _that._events = null;
     }
 
     /**

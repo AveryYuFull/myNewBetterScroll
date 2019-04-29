@@ -1,32 +1,33 @@
 <template>
     <div class="bs_wrapper">
-        <div class="bs_wrapper-cont">
-            <ul class="bs_cont">
-                <li class="bs_cont-item"
-                    :key="index"
-                    v-for="(item, index) in (itemData || [])"
-                    v-text="item">
-                </li>
-            </ul>
-        </div>
+        <bs-scroll
+            class="bs_scroll"
+            :list="list">
+        </bs-scroll>
     </div>
 </template>
 
 <script>
 import scrollFactory from '../commons';
-
+import BsScroll from './scroll/Scroll';
 export default {
     name: 'bs-list',
+    components: {
+        BsScroll
+    },
     data () {
         return {
-            itemData: []
+            list: []
         };
     },
     mounted() {
         const _that = this;
-        _that.genItemData();
+        _that._genList();
         setTimeout(() => {
             let bScroll = scrollFactory(_that.$el);
+            bScroll.$on('pullingUp', () => {
+                console.log('pullingUp');
+            });
             // bScroll.$on('beforeScrollStart', (evt) => {
             //     console.log('beforeScrollStart-->', evt);
             // });
@@ -45,10 +46,10 @@ export default {
         });
     },
     methods: {
-        genItemData (lower = 0, upper = 100) {
+        _genList (lower = 0, upper = 100) {
             const _that = this;
             for (let i = lower; i < upper; i++) {
-                _that.itemData.push(i);
+                _that.list.push(i);
             }
         }
     }
@@ -62,21 +63,9 @@ ul {
     padding: 0;
 }
 .bs_wrapper {
+    position: relative;
     overflow: hidden;
     height: 350px;
     border: 1px solid rgba(0, 0, 0, 0.3);
-    position: relative;
-    .bs_cont {}
-    .bs_cont-item {
-        user-select: none;
-        padding: 5px 10px;
-        background: rgba(173, 164, 164, 0.5);
-        line-height: 40px;
-        font-size: 16px;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-        &:last-child {
-            border-bottom: none;
-        }
-    }
 }
 </style>

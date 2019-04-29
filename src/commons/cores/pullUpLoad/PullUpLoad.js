@@ -1,7 +1,7 @@
 import DefaultOptions from '../../utils/DefaultOptions';
 import { EVENT_TYPE, DEFAULT_CONFIG } from '../../constants';
 
-class PullUpLoad extends DefaultOptions {
+class PullupLoad extends DefaultOptions {
     defaultOptions = DEFAULT_CONFIG;
 
     /**
@@ -55,12 +55,13 @@ class PullUpLoad extends DefaultOptions {
      * @param {Object} options 可选参数
      */
     _doCheck (evt, options) {
+        console.log(evt, options);
         if (!evt) {
             return;
         }
         const _that = this;
         const _opts = _that.getOptions(options);
-        let { threshold = 0 } = _opts.pullUpLoad;
+        let { threshold = 0 } = _opts.pullupLoad;
         const _scroller = _that.scroller;
         const _y = evt.y;
         if (_y <= _scroller.maxScrollY + threshold) {
@@ -111,8 +112,8 @@ class PullUpLoad extends DefaultOptions {
  * 上拉加载的工厂方法
  * @param {Scroll} scroller 滚动条对象
  * @param {Object} options 可选参数
- * @returns {PullUpLoad} 返回PullUpLoad对象
+ * @returns {PullupLoad} 返回PullUpLoad对象
  */
-export default function pullUpLoadFactory (scroller, options) {
-    return new PullUpLoad(scroller, options);
+export default function pullupLoadFactory (scroller, options) {
+    return new PullupLoad(scroller, options);
 }
